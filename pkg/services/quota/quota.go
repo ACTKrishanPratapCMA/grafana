@@ -3,11 +3,23 @@ package quota
 import (
 	"github.com/grafana/grafana/pkg/bus"
 	m "github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/registry"
 	"github.com/grafana/grafana/pkg/services/session"
 	"github.com/grafana/grafana/pkg/setting"
 )
 
-func QuotaReached(c *m.ReqContext, target string) (bool, error) {
+func init() {
+	registry.RegisterService(&QuotaService{})
+}
+
+type QuotaService struct {
+}
+
+func (qs *QuotaService) Init() error {
+	return nil
+}
+
+func (qs *QuotaService) QuotaReached(c *m.ReqContext, target string) (bool, error) {
 	if !setting.Quota.Enabled {
 		return false, nil
 	}

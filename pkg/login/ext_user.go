@@ -4,18 +4,30 @@ import (
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/log"
 	m "github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/registry"
 	"github.com/grafana/grafana/pkg/services/quota"
 )
 
 func init() {
-	bus.AddHandler("auth", UpsertUser)
+	registry.RegisterService(&LoginService{})
 }
 
 var (
 	logger = log.New("login.ext_user")
 )
 
-func UpsertUser(cmd *m.UpsertUserCommand) error {
+type LoginService struct {
+	Bus          bus.Bus             `inject:""`
+	QuotaService *quota.QuotaService `inject:""`
+}
+
+func (ls *LoginService) Init() error {
+	ls.Bus.AddHandler(ls.UpsertUser)
+
+	return nil
+}
+
+func (ls *LoginService) UpsertUser(cmd *m.UpsertUserCommand) error {
 	extUser := cmd.ExternalUser
 
 	userQuery := &m.GetUserByAuthInfoQuery{
@@ -37,7 +49,7 @@ func UpsertUser(cmd *m.UpsertUserCommand) error {
 			return ErrInvalidCredentials
 		}
 
-		limitReached, err := quota.QuotaReached(cmd.ReqContext, "user")
+		limitReached, err := ls.QuotaService.QuotaReached(cmd.ReqContext, "user")
 		if err != nil {
 			log.Warn("Error getting user quota. error: %v", err)
 			return ErrGettingUserQuota
