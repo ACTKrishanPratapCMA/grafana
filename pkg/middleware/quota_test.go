@@ -3,6 +3,8 @@ package middleware
 import (
 	"testing"
 
+	"github.com/grafana/grafana/pkg/services/quota"
+
 	"github.com/grafana/grafana/pkg/bus"
 	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
@@ -34,7 +36,11 @@ func TestMiddlewareQuota(t *testing.T) {
 			},
 		}
 
-		QuotaFn := Quota(nil)
+		fakeAuthTokenService := newFakeUserAuthTokenService()
+		qs := &quota.QuotaService{
+			AuthTokenService: fakeAuthTokenService,
+		}
+		QuotaFn := Quota(qs)
 
 		middlewareScenario("with user not logged in", func(sc *scenarioContext) {
 			bus.AddHandler("globalQuota", func(query *m.GetGlobalQuotaByTargetQuery) error {

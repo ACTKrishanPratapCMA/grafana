@@ -31,6 +31,12 @@ func TestUserAuthToken(t *testing.T) {
 			So(userToken, ShouldNotBeNil)
 			So(userToken.AuthTokenSeen, ShouldBeFalse)
 
+			Convey("Can count active tokens", func() {
+				count, err := userAuthTokenService.ActiveAuthTokenCount()
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+			})
+
 			Convey("When lookup unhashed token should return user auth token", func() {
 				userToken, err := userAuthTokenService.LookupToken(userToken.UnhashedToken)
 				So(err, ShouldBeNil)

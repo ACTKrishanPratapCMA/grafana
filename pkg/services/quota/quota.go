@@ -4,7 +4,6 @@ import (
 	"github.com/grafana/grafana/pkg/bus"
 	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/registry"
-	"github.com/grafana/grafana/pkg/services/session"
 	"github.com/grafana/grafana/pkg/setting"
 )
 
@@ -13,6 +12,7 @@ func init() {
 }
 
 type QuotaService struct {
+	AuthTokenService m.UserTokenService `inject:""`
 }
 
 func (qs *QuotaService) Init() error {
@@ -42,7 +42,12 @@ func (qs *QuotaService) QuotaReached(c *m.ReqContext, target string) (bool, erro
 				return true, nil
 			}
 			if target == "session" {
-				usedSessions := session.GetSessionCount()
+
+				usedSessions, err := qs.AuthTokenService.ActiveAuthTokenCount()
+				if err != nil {
+					return false, err
+				}
+
 				if int64(usedSessions) > scope.DefaultLimit {
 					c.Logger.Debug("Sessions limit reached", "active", usedSessions, "limit", scope.DefaultLimit)
 					return true, nil

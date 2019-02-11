@@ -35,6 +35,19 @@ func (s *UserAuthTokenService) Init() error {
 	return nil
 }
 
+func (s *UserAuthTokenService) ActiveAuthTokenCount() (int64, error) {
+
+	tokenMaxLifetime := time.Duration(s.Cfg.LoginMaxLifetimeDays) * 24 * time.Hour
+	tokenMaxInactiveLifetime := time.Duration(s.Cfg.LoginMaxInactiveLifetimeDays) * 24 * time.Hour
+	createdAfter := getTime().Add(-tokenMaxLifetime).Unix()
+	rotatedAfter := getTime().Add(-tokenMaxInactiveLifetime).Unix()
+
+	var model userAuthToken
+	count, err := s.SQLStore.NewSession().Where(`created_at > ? AND rotated_at > ?`, createdAfter, rotatedAfter).Count(&model)
+
+	return count, err
+}
+
 func (s *UserAuthTokenService) CreateToken(userId int64, clientIP, userAgent string) (*models.UserToken, error) {
 	clientIP = util.ParseIPAddress(clientIP)
 	token, err := util.RandomHex(16)
