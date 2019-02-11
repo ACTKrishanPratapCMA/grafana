@@ -69,7 +69,7 @@ func (ls *LoginService) UpsertUser(cmd *m.UpsertUserCommand) error {
 				AuthModule: extUser.AuthModule,
 				AuthId:     extUser.AuthId,
 			}
-			if err := bus.Dispatch(cmd2); err != nil {
+			if err := ls.Bus.Dispatch(cmd2); err != nil {
 				return err
 			}
 		}
@@ -90,12 +90,12 @@ func (ls *LoginService) UpsertUser(cmd *m.UpsertUserCommand) error {
 
 	// Sync isGrafanaAdmin permission
 	if extUser.IsGrafanaAdmin != nil && *extUser.IsGrafanaAdmin != cmd.Result.IsAdmin {
-		if err := bus.Dispatch(&m.UpdateUserPermissionsCommand{UserId: cmd.Result.Id, IsGrafanaAdmin: *extUser.IsGrafanaAdmin}); err != nil {
+		if err := ls.Bus.Dispatch(&m.UpdateUserPermissionsCommand{UserId: cmd.Result.Id, IsGrafanaAdmin: *extUser.IsGrafanaAdmin}); err != nil {
 			return err
 		}
 	}
 
-	err = bus.Dispatch(&m.SyncTeamsCommand{
+	err = ls.Bus.Dispatch(&m.SyncTeamsCommand{
 		User:         cmd.Result,
 		ExternalUser: extUser,
 	})
